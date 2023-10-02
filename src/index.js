@@ -1,9 +1,15 @@
 /**
  * Build styles
  */
-import './index.css';
+import "./index.css";
 
-import { IconAlignLeft, IconAlignCenter, IconQuote } from '@codexteam/icons';
+import {
+  IconAlignLeft,
+  IconAlignCenter,
+  IconQuote,
+  IconAlignRight,
+  IconAlignJustify,
+} from "@codexteam/icons";
 
 /**
  * @class Quote
@@ -15,13 +21,13 @@ import { IconAlignLeft, IconAlignCenter, IconQuote } from '@codexteam/icons';
  * @description Quote Tool`s input and output data
  * @property {string} text - quote`s text
  * @property {string} caption - quote`s caption
- * @property {'center'|'left'} alignment - quote`s alignment
+ * @property {'center'|'left'|'right'|'justify'} alignment - quote`s alignment
  *
  * @typedef {object} QuoteConfig
  * @description Quote Tool`s initial configuration
  * @property {string} quotePlaceholder - placeholder to show in quote`s text input
  * @property {string} captionPlaceholder - placeholder to show in quote`s caption input
- * @property {'center'|'left'} defaultAlignment - alignment to use as default
+ * @property {'center'|'left'|'right'|'justify'} defaultAlignment - alignment to use as default
  *
  * @typedef {object} TunesMenuConfig
  * @property {string} icon - menu item icon
@@ -50,7 +56,7 @@ export default class Quote {
   static get toolbox() {
     return {
       icon: IconQuote,
-      title: 'Quote',
+      title: "Quote",
     };
   }
 
@@ -81,7 +87,7 @@ export default class Quote {
    * @returns {string}
    */
   static get DEFAULT_QUOTE_PLACEHOLDER() {
-    return 'Enter a quote';
+    return "Enter a quote";
   }
 
   /**
@@ -91,19 +97,21 @@ export default class Quote {
    * @returns {string}
    */
   static get DEFAULT_CAPTION_PLACEHOLDER() {
-    return 'Enter a caption';
+    return "Enter a caption";
   }
 
   /**
    * Allowed quote alignments
    *
    * @public
-   * @returns {{left: string, center: string}}
+   * @returns {{left: string, center: string, right: string, justify: string}}
    */
   static get ALIGNMENTS() {
     return {
-      left: 'left',
-      center: 'center',
+      left: "left",
+      center: "center",
+      right: "right",
+      justify: "justify",
     };
   }
 
@@ -125,7 +133,7 @@ export default class Quote {
       /**
        * To create Quote data from string, simple fill 'text' property
        */
-      import: 'text',
+      import: "text",
       /**
        * To create string from Quote data, concatenate text and caption
        *
@@ -133,7 +141,9 @@ export default class Quote {
        * @returns {string}
        */
       export: function (quoteData) {
-        return quoteData.caption ? `${quoteData.text} — ${quoteData.caption}` : quoteData.text;
+        return quoteData.caption
+          ? `${quoteData.text} — ${quoteData.caption}`
+          : quoteData.text;
       },
     };
   }
@@ -141,15 +151,16 @@ export default class Quote {
   /**
    * Tool`s styles
    *
-   * @returns {{baseClass: string, wrapper: string, quote: string, input: string, caption: string}}
+   * @returns {{baseClass: string, wrapper: string, text: string, textTune: string, quote: string, input: string, caption: string}}
    */
   get CSS() {
     return {
       baseClass: this.api.styles.block,
-      wrapper: 'cdx-quote',
-      text: 'cdx-quote__text',
+      wrapper: "cdx-quote",
+      text: "cdx-quote__text",
+      textTune: "cdx-quote__text--" + this.data.alignment,
       input: this.api.styles.input,
-      caption: 'cdx-quote__caption',
+      caption: "cdx-quote__caption",
     };
   }
 
@@ -161,12 +172,20 @@ export default class Quote {
   get settings() {
     return [
       {
-        name: 'left',
+        name: "left",
         icon: IconAlignLeft,
       },
       {
-        name: 'center',
+        name: "center",
         icon: IconAlignCenter,
+      },
+      {
+        name: "right",
+        icon: IconAlignRight,
+      },
+      {
+        name: "justify",
+        icon: IconAlignJustify,
       },
     ];
   }
@@ -180,21 +199,26 @@ export default class Quote {
    *   api - Editor.js API
    *   readOnly - read-only mode flag
    */
-  constructor({ data, config, api, readOnly }) {
+  constructor({ data, config, api, readOnly, block }) {
     const { ALIGNMENTS, DEFAULT_ALIGNMENT } = Quote;
 
     this.api = api;
+    this.blockAPI = block;
     this.readOnly = readOnly;
 
-    this.quotePlaceholder = config.quotePlaceholder || Quote.DEFAULT_QUOTE_PLACEHOLDER;
-    this.captionPlaceholder = config.captionPlaceholder || Quote.DEFAULT_CAPTION_PLACEHOLDER;
+    this.quotePlaceholder =
+      config.quotePlaceholder || Quote.DEFAULT_QUOTE_PLACEHOLDER;
+    this.captionPlaceholder =
+      config.captionPlaceholder || Quote.DEFAULT_CAPTION_PLACEHOLDER;
 
     this.data = {
-      text: data.text || '',
-      caption: data.caption || '',
-      alignment: Object.values(ALIGNMENTS).includes(data.alignment) && data.alignment ||
-      config.defaultAlignment ||
-      DEFAULT_ALIGNMENT,
+      text: data.text || "",
+      caption: data.caption || "",
+      alignment:
+        (Object.values(ALIGNMENTS).includes(data.alignment) &&
+          data.alignment) ||
+        config.defaultAlignment ||
+        DEFAULT_ALIGNMENT,
     };
   }
 
@@ -204,15 +228,22 @@ export default class Quote {
    * @returns {Element}
    */
   render() {
-    const container = this._make('blockquote', [this.CSS.baseClass, this.CSS.wrapper]);
-    const quote = this._make('div', [this.CSS.input, this.CSS.text], {
+    const container = this._make("blockquote", [
+      this.CSS.baseClass,
+      this.CSS.wrapper,
+    ]);
+    const quote = this._make("div", [this.CSS.input, this.CSS.text], {
       contentEditable: !this.readOnly,
       innerHTML: this.data.text,
     });
-    const caption = this._make('div', [this.CSS.input, this.CSS.caption], {
-      contentEditable: !this.readOnly,
-      innerHTML: this.data.caption,
-    });
+    const caption = this._make(
+      "div",
+      [this.CSS.input, this.CSS.caption, this.CSS.textTune],
+      {
+        contentEditable: !this.readOnly,
+        innerHTML: this.data.caption,
+      }
+    );
 
     quote.dataset.placeholder = this.quotePlaceholder;
     caption.dataset.placeholder = this.captionPlaceholder;
@@ -263,16 +294,16 @@ export default class Quote {
    *
    */
   renderSettings() {
-    const capitalize = str => str[0].toUpperCase() + str.substr(1);
+    const capitalize = (str) => str[0].toUpperCase() + str.substr(1);
 
-    return this.settings.map(item => ({
+    return this.settings.map((item) => ({
       icon: item.icon,
       label: this.api.i18n.t(`Align ${capitalize(item.name)}`),
       onActivate: () => this._toggleTune(item.name),
       isActive: this.data.alignment === item.name,
       closeOnActivate: true,
     }));
-  };
+  }
 
   /**
    * Toggle quote`s alignment
@@ -281,7 +312,13 @@ export default class Quote {
    * @private
    */
   _toggleTune(tune) {
+    const text = this.blockAPI.holder.querySelector(`.${this.CSS.text}`);
+    text.classList.remove(this.CSS.textTune);
+
     this.data.alignment = tune;
+
+    text.classList.add(this.CSS.textTune);
+    this.blockAPI.dispatchChange();
   }
 
   /**
